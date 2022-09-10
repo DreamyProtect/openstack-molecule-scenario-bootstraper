@@ -13,14 +13,7 @@
 {% if cookiecutter.gitlabci_usage %}
     commit_sha: {% raw %}"{{ lookup('env', 'CI_COMMIT_TAG') | replace('.','_') or lookup('env', 'CI_COMMIT_SHORT_SHA') }}"{% endraw %}
 {% elif cookiecutter.giuthubactions_usage %}
-  # Github actions doesn't provide the tag in a specific environment variable so we need to check if we're running the CI on a tag
-  {% if lookup('env', 'GITHUB_REF') | search('refs/tags/*') %}
-    # If we run on a tag, we use the tag to name resources
-    commit_sha: {% raw %}"{{  lookup('env', 'GITHUB_REF_NAME') }}"{% endraw %}
-  {% else %}
-  # else we use the commit sha
     commit_sha: {% raw %}"{{ lookup('env', 'GITHUB_SHA' }}"{% endraw %}
-  {% endif %}
 {% else %}
     commit_sha: local
 {% endif %}

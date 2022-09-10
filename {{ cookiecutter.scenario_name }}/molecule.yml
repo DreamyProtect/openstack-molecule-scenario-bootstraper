@@ -1,0 +1,21 @@
+---
+dependency:
+  name: galaxy
+lint: |
+  set -e
+  ansible-lint .
+driver:
+  name: delegated
+platforms:
+{%- set platform_count = cookiecutter.platform_count | int -%}
+{%- for i in range(platform_count) %}
+  - name: instance-{{ cookiecutter.role_name }}-{{ i }}
+    image: {{ cookiecutter.platform_image_name }}
+    flavor: {{ cookiecutter.platform_flavor }}
+    ssh_user: {{ cookiecutter.platform_ssh_user }}
+    network: {{ cookiecutter.platform_network_name }}
+{%- endfor %}
+provisioner:
+  name: ansible
+verifier:
+  name: ansible

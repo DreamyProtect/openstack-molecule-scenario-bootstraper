@@ -1,0 +1,65 @@
+{% raw -%}
+---
+- name: Destroy
+  hosts: localhost
+  vars:
+    security_group_rules:
+      - proto: tcp
+        port_range_start: "22"
+        port_range_stop: "22"
+        cidr: '0.0.0.0/0'
+{%- endraw %}
+    role_name: "{{ cookiecutter.role_name }}"
+{% if cookiecutter.gitlabci_usage %}
+    commit_sha: {% raw %}"{{ lookup('env', 'CI_COMMIT_TAG') | replace('.','_') or lookup('env', 'CI_COMMIT_SHORT_SHA') }}"{% endraw %}
+{% elsif cookiecutter.giuthubactions_usage %}
+  # Github actions doesn't provide the tag in a specific environment variable so we need to check if we're running the CI on a tag
+  {% if lookup('env', 'GITHUB_REF') | search('refs/tags/*') %}
+    # If we run on a tag, we use the tag to name resources
+    commit_sha: {% raw %}"{{  lookup('env', 'GITHUB_REF_NAME') }}"{% endraw %}
+  {% else %}
+  # else we use the commit sha
+    commit_sha: {% raw %}"{{ lookup('env', 'GITHUB_SHA' }}"{% endraw %}
+  {% endif %}
+{% else %}
+    commit_sha: local
+{% endif %}
+{%- raw %}
+    keypair_name: "molecule-{{ role_name }}-{{ commit_sha }}-keypair"
+    security_group_name: "molecule-{{ role_name }}-{{ commit_sha }}-security-group"
+    ssh_key_location: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/ssh_key"
+  tasks:
+    - name: "Destroy testing instances"
+      openstack.cloud.server:
+        state: absent
+        name: "{{ item.name }}-{{ commit_sha }}"
+        image: "{{ item.image }}"
+        key_name: "{{ keypair_name }}"
+        flavor: "{{ item.flavor }}"
+        security_groups:
+          - "{{ security_group_name }}"
+        auto_ip: yes
+        network: "{{ item.network }}"
+      with_items: "{{ molecule_yml.platforms }}"
+
+    - name: "Destroy temporary keypair"
+      openstack.cloud.keypair:
+        state: absent
+        name: "{{ keypair_name }}"
+
+    - name: "Destroy temporary security group"
+      openstack.cloud.security_group:
+        state: absent
+        name: "{{ security_group_name }}"
+        description: temporary security group for molecule testing
+
+    - name: Remove instance_config.yml
+      ansible.builtin.file:
+        state: absent
+        path: "{{ lookup('env', 'MOLECULE_EPHEMERAL_DIRECTORY') }}/instance_config.yml"
+
+    - name: Remove temporary ssh key
+      ansible.builtin.file:
+        state: absent
+        path: "{{ ssh_key_location }}"
+{% endraw -%}

@@ -1,0 +1,11 @@
+{
+    "scenario_name": "default",
+    "role_name": "default",
+    "gitlabci_usage": [true, false],
+    "giuthubactions_usage": [true, false],
+    "platform_image_name": "default",
+    "platform_count": 1,
+    "platform_flavor": "m1.small",
+    "platform_ssh_user": "debian",
+    "platform_network_name": "fixed"
+}

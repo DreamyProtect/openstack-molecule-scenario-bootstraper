@@ -1,0 +1,9 @@
+{% raw -%}
+{% for instance in instances_infos.results %}
+- address: "{{ instance.openstack.accessIPv4 }}"
+  identity_file: "{{ ssh_key_location }}"
+  instance: "{{ instance.item.name }}"
+  port: "22"
+  user: "{{ instance.item.ssh_user }}"
+{% endfor %}
+{% endraw -%}
